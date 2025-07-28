@@ -23,7 +23,7 @@ joints = [
 SPOT_MICRO_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
         usd_path="/home/manh/Projects/Isaaclab-MicroSpot/source/isaaclab_assets/data/Robots/SpotMicro/spot_micro.usd",
-        activate_contact_sensors=False,
+        activate_contact_sensors=True,
         
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             rigid_body_enabled=True,
