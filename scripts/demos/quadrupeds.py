@@ -46,6 +46,7 @@ from isaaclab.assets import Articulation
 from isaaclab_assets.robots.anymal import ANYMAL_B_CFG, ANYMAL_C_CFG, ANYMAL_D_CFG  # isort:skip
 from isaaclab_assets.robots.spot import SPOT_CFG  # isort:skip
 from isaaclab_assets.robots.unitree import UNITREE_A1_CFG, UNITREE_GO1_CFG, UNITREE_GO2_CFG  # isort:skip
+from isaaclab_assets.robots.spot_micro import SPOT_MICRO_CFG  # isort:skip
 
 
 def define_origins(num_origins: int, spacing: float) -> list[list[float]]:
@@ -74,7 +75,7 @@ def design_scene() -> tuple[dict, list[list[float]]]:
 
     # Create separate groups called "Origin1", "Origin2", "Origin3"
     # Each group will have a mount and a robot on top of it
-    origins = define_origins(num_origins=7, spacing=1.25)
+    origins = define_origins(num_origins=8, spacing=1.25)
 
     # Origin 1 with Anymal B
     prim_utils.create_prim("/World/Origin1", "Xform", translation=origins[0])
@@ -110,6 +111,11 @@ def design_scene() -> tuple[dict, list[list[float]]]:
     prim_utils.create_prim("/World/Origin7", "Xform", translation=origins[6])
     # -- Robot
     spot = Articulation(SPOT_CFG.replace(prim_path="/World/Origin7/Robot"))
+    
+    # Origin 8 with Spot Micro
+    prim_utils.create_prim("/World/Origin8", "Xform", translation=origins[7])
+    # -- Robot
+    spot_micro = Articulation(SPOT_MICRO_CFG.replace(prim_path="/World/Origin8/Robot"))
 
     # return the scene information
     scene_entities = {
@@ -120,6 +126,7 @@ def design_scene() -> tuple[dict, list[list[float]]]:
         "unitree_go1": unitree_go1,
         "unitree_go2": unitree_go2,
         "spot": spot,
+        "spot_micro": spot_micro,
     }
     return scene_entities, origins
 
