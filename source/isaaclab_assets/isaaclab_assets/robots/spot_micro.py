@@ -22,7 +22,7 @@ joints = [
 
 SPOT_MICRO_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path="/home/manh/Projects/Isaaclab-MicroSpot/source/isaaclab_assets/data/Robots/SpotMicro/spot_micro.usd",
+        usd_path="/home/manh/Projects/IsaacLab-SpotMicro/source/isaaclab_assets/data/Robots/SpotMicro/spot_micro.usd",
         activate_contact_sensors=True,
         
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -42,7 +42,7 @@ SPOT_MICRO_CFG = ArticulationCfg(
     ),
     
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, .7),  
+        pos=(0.0, 0.0, .3),  
         joint_pos={
             ".*_left_shoulder": 0.0,    
             ".*_right_shoulder": 0.0,       
