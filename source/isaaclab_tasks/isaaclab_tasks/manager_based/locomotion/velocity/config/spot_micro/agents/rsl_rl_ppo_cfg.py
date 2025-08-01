@@ -11,8 +11,8 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class SpotMicroFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 200000
-    save_interval = 50
+    max_iterations = 20000
+    save_interval = 500
     experiment_name = "spot_micro_flat_ppo"
     empirical_normalization = False
     store_code_state = False

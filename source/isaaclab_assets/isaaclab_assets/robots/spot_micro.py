@@ -42,12 +42,15 @@ SPOT_MICRO_CFG = ArticulationCfg(
     ),
     
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, .3),  
+        pos=(0.0, 0.0, .2),  
         joint_pos={
-            ".*_left_shoulder": 0.0,    
-            ".*_right_shoulder": 0.0,       
-            ".*_leg":  0.0,             
-            ".*_foot": 0.0,             
+            ".*_left_shoulder": 0.1,    
+            ".*_right_shoulder": -0.1,       
+            "front_left_leg":  0.9,             
+            "front_right_leg": 0.9,
+            "rear_left_leg":  1.1,
+            "rear_right_leg": 1.1,
+            ".*_foot": -1.5,             
         },
         joint_vel={".*": 0.0}, 
     ),

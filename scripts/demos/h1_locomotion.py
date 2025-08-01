@@ -19,7 +19,7 @@ import argparse
 import os
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 import scripts.reinforcement_learning.rsl_rl.cli_args as cli_args  # isort: skip
 
 

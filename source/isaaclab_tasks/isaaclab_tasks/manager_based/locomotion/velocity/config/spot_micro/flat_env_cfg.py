@@ -16,7 +16,7 @@ from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
-import isaaclab_tasks.manager_based.locomotion.velocity.config.spot.mdp as spot_mdp
+import isaaclab_tasks.manager_based.locomotion.velocity.config.spot_micro.mdp as spot_mdp
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
 from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
 
@@ -59,7 +59,7 @@ COBBLESTONE_ROAD_CFG = terrain_gen.TerrainGeneratorCfg(
 class SpotActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.2, use_default_offset=True)
+    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
 
 
 @configclass
@@ -68,9 +68,9 @@ class SpotCommandsCfg:
 
     base_velocity = mdp.UniformVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(10.0, 10.0),
+        resampling_time_range=(5.0, 5.0),
         rel_standing_envs=0.1,
-        rel_heading_envs=0.5,
+        rel_heading_envs=0.7,
         heading_command=True,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
@@ -138,7 +138,7 @@ class SpotEventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
-            "mass_distribution_params": (-2.5, 2.5),
+            "mass_distribution_params": (-0., 0.),
             "operation": "add",
         },
     )
@@ -208,17 +208,17 @@ class SpotRewardsCfg:
     )
     base_angular_velocity = RewardTermCfg(
         func=spot_mdp.base_angular_velocity_reward,
-        weight=5.0,
+        weight=15.0,
         params={"std": 2.0, "asset_cfg": SceneEntityCfg("robot")},
     )
     base_linear_velocity = RewardTermCfg(
         func=spot_mdp.base_linear_velocity_reward,
-        weight=5.0,
+        weight=15.0,
         params={"std": 1.0, "ramp_rate": 0.5, "ramp_at_vel": 1.0, "asset_cfg": SceneEntityCfg("robot")},
     )
     foot_clearance = RewardTermCfg(
         func=spot_mdp.foot_clearance_reward,
-        weight=0.5,
+        weight=0.7,
         params={
             "std": 0.05,
             "tanh_mult": 2.0,
@@ -240,17 +240,24 @@ class SpotRewardsCfg:
     )
 
     # -- penalties
-    action_smoothness = RewardTermCfg(func=spot_mdp.action_smoothness_penalty, weight=-1.0)
+    action_smoothness = RewardTermCfg(
+        func=spot_mdp.action_smoothness_penalty, 
+        weight=-1.0
+    )
     air_time_variance = RewardTermCfg(
         func=spot_mdp.air_time_variance_penalty,
-        weight=-1.0,
+        weight=-0.5,
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_toe_link")},
     )
     base_motion = RewardTermCfg(
-        func=spot_mdp.base_motion_penalty, weight=-2.0, params={"asset_cfg": SceneEntityCfg("robot")}
+        func=spot_mdp.base_motion_penalty, 
+        weight=-2.0, 
+        params={"asset_cfg": SceneEntityCfg("robot")}
     )
     base_orientation = RewardTermCfg(
-        func=spot_mdp.base_orientation_penalty, weight=-3.0, params={"asset_cfg": SceneEntityCfg("robot")}
+        func=spot_mdp.base_orientation_penalty, 
+        weight=-6.0, 
+        params={"asset_cfg": SceneEntityCfg("robot")}
     )
     foot_slip = RewardTermCfg(
         func=spot_mdp.foot_slip_penalty,
@@ -263,7 +270,7 @@ class SpotRewardsCfg:
     )
     joint_acc = RewardTermCfg(
         func=spot_mdp.joint_acceleration_penalty,
-        weight=-1.0e-4,
+        weight=-2.0e-5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=hxy)},
     )
     joint_pos = RewardTermCfg(
@@ -277,13 +284,29 @@ class SpotRewardsCfg:
     )
     joint_torques = RewardTermCfg(
         func=spot_mdp.joint_torques_penalty,
-        weight=-5.0e-4,
+        weight=-1.0e-4,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")},
     )
     joint_vel = RewardTermCfg(
         func=spot_mdp.joint_velocity_penalty,
-        weight=-1.0e-2,
+        weight=-2.0e-3,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=hxy)},
+    )
+
+    no_significant_movement = RewardTermCfg(
+        func=spot_mdp.no_significant_movement_penalty,
+        weight=-20.0,  # Phạt mạnh khi không di chuyển đáng kể
+        params={"min_vel": 0.3, "scale": 5.0, "asset_cfg": SceneEntityCfg("robot")},
+    )
+
+    wrong_direction = RewardTermCfg(
+        func=spot_mdp.wrong_direction_penalty,
+        weight=-1.0,  # Trọng số âm để phạt, điều chỉnh dựa trên mức độ ưu tiên
+        params={
+            "std": 0.5,  # Độ lệch chuẩn, điều chỉnh để kiểm soát độ nhạy của phạt
+            "min_cmd_vel": 0.1,  # Ngưỡng vận tốc lệnh tối thiểu
+            "asset_cfg": SceneEntityCfg("robot"),
+        },
     )
 
 

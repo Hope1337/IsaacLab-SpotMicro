@@ -280,3 +280,73 @@ def joint_velocity_penalty(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) ->
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     return torch.linalg.norm((asset.data.joint_vel), dim=1)
+
+def no_significant_movement_penalty(
+    env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, min_vel: float, scale: float
+) -> torch.Tensor:
+    """Penalize when the robot's body velocity is too low while a significant velocity command is given."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    # Lấy vận tốc tuyến tính của thân robot trong mặt phẳng xy
+    body_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    # Lấy biên độ của lệnh vận tốc
+    cmd_vel = torch.linalg.norm(env.command_manager.get_command("base_velocity")[:, :2], dim=1)
+    # Phạt khi vận tốc cơ thể nhỏ hơn ngưỡng và có lệnh vận tốc đáng kể
+    penalty = torch.where(
+        (body_vel < min_vel) & (cmd_vel > 0.1),  # Chỉ phạt khi có lệnh vận tốc (>0.1 để tránh nhiễu)
+        scale * (min_vel - body_vel),  # Phạt tỷ lệ với sai số vận tốc
+        torch.zeros_like(body_vel)
+    )
+    return penalty
+
+def wrong_direction_penalty(
+    env: ManagerBasedRLEnv, 
+    asset_cfg: SceneEntityCfg, 
+    std: float, 
+    min_cmd_vel: float = 0.1
+) -> torch.Tensor:
+    """Penalize when the robot moves in a direction different from the commanded velocity direction.
+    
+    This penalty computes the angular error between the robot's actual linear velocity (in xy-plane)
+    and the commanded velocity. The penalty is applied only when the command velocity magnitude
+    is significant to avoid penalizing when the robot is stationary.
+    
+    Args:
+        env: The RL environment instance.
+        asset_cfg: Configuration of the robot asset.
+        std: Standard deviation for the exponential kernel to control penalty sensitivity.
+        min_cmd_vel: Minimum command velocity magnitude to apply the penalty (default: 0.1).
+    
+    Returns:
+        A tensor containing the penalty values for each environment.
+    """
+    # Extract the used quantities
+    asset: Articulation = env.scene[asset_cfg.name]
+    
+    # Get the commanded velocity (xy components)
+    cmd_vel = env.command_manager.get_command("base_velocity")[:, :2]
+    
+    # Get the actual linear velocity of the robot's base (xy components)
+    actual_vel = asset.data.root_lin_vel_b[:, :2]
+    
+    # Compute the magnitude of the command velocity
+    cmd_vel_magnitude = torch.linalg.norm(cmd_vel, dim=1)
+    
+    # Compute the cosine of the angle between commanded and actual velocity vectors
+    # Using dot product: cos(theta) = (a . b) / (|a| * |b|)
+    dot_product = torch.sum(cmd_vel * actual_vel, dim=1)
+    norm_product = torch.linalg.norm(cmd_vel, dim=1) * torch.linalg.norm(actual_vel, dim=1)
+    
+    # Avoid division by zero by clamping norm_product
+    norm_product = torch.clamp(norm_product, min=1e-6)
+    cos_theta = dot_product / norm_product
+    
+    # Compute the angular error (in radians) using arccos
+    angular_error = torch.acos(torch.clamp(cos_theta, -1.0, 1.0))
+    
+    # Apply exponential penalty based on angular error
+    penalty = torch.exp(angular_error / std) - 1.0  # Subtract 1 to make penalty 0 when error is 0
+    
+    # Only apply penalty when command velocity is significant
+    penalty = torch.where(cmd_vel_magnitude > min_cmd_vel, penalty, torch.zeros_like(penalty))
+    
+    return penalty
