@@ -56,13 +56,12 @@ from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkp
 
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 
-from isaaclab_tasks.manager_based.locomotion.velocity.config.h1.rough_env_cfg import H1RoughEnvCfg_PLAY
-
+from isaaclab_tasks.manager_based.locomotion.velocity.config.spot_micro.flat_env_cfg import SpotMicroFlatEnvCfg_PLAY
 TASK = "Isaac-Velocity-Rough-H1-v0"
 RL_LIBRARY = "rsl_rl"
 
 
-class H1RoughDemo:
+class SpotMicroDemo:
     """This class provides an interactive demo for the H1 rough terrain environment.
     It loads a pre-trained checkpoint for the Isaac-Velocity-Rough-H1-v0 task, trained with RSL RL
     and defines a set of keyboard commands for directing motion of selected robots.
@@ -77,14 +76,16 @@ class H1RoughDemo:
     * C: switch between third-person and perspective views
     * ESC: exit current third-person view"""
 
-    def __init__(self):
+    def __init__(self, checkpoint: str | None = None):
         """Initializes environment config designed for the interactive model and sets up the environment,
         loads pre-trained checkpoints, and registers keyboard events."""
         agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(TASK, args_cli)
         # load the trained jit policy
-        checkpoint = get_published_pretrained_checkpoint(RL_LIBRARY, TASK)
+        #checkpoint = get_published_pretrained_checkpoint(RL_LIBRARY, TASK)
+        #print(checkpoint)
+        #sys.exit()
         # create envionrment
-        env_cfg = H1RoughEnvCfg_PLAY()
+        env_cfg = SpotMicroFlatEnvCfg_PLAY()
         env_cfg.scene.num_envs = 25
         env_cfg.episode_length_s = 1000000
         env_cfg.curriculum = None
@@ -133,9 +134,9 @@ class H1RoughDemo:
         R = 0.5
         self._key_to_control = {
             "UP": torch.tensor([T, 0.0, 0.0, 0.0], device=self.device),
-            "DOWN": torch.tensor([-T, 0.0, 0.0, 0.0], device=self.device),
-            "LEFT": torch.tensor([T, 0.0, 0.0, -R], device=self.device),
-            "RIGHT": torch.tensor([T, 0.0, 0.0, R], device=self.device),
+            "DOWN": torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device),
+            "LEFT": torch.tensor([0.0, 0.0, R, R], device=self.device),
+            "RIGHT": torch.tensor([0.0, 0.0, -R, R], device=self.device),
             "ZEROS": torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device),
         }
 
@@ -208,7 +209,7 @@ class H1RoughDemo:
 
 def main():
     """Main function."""
-    demo_h1 = H1RoughDemo()
+    demo_h1 = SpotMicroDemo("logs/rsl_rl/spot_micro_flat_ppo/2025-07-29_16-29-42/model_19999.pt")
     obs, _ = demo_h1.env.reset()
     while simulation_app.is_running():
         # check for selected robots
@@ -216,9 +217,8 @@ def main():
         with torch.inference_mode():
             action = demo_h1.policy(obs)
             obs, _, _, _ = demo_h1.env.step(action)
-            print(obs.shape)
             # overwrite command based on keyboard input
-            obs[:, 9:13] = demo_h1.commands
+            obs[:, 9:12] = demo_h1.commands[:, 0:3]
 
 
 if __name__ == "__main__":
